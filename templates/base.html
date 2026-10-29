@@ -1,0 +1,71 @@
+{% load static ui %}<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Bán vé tàu{% endblock %} · Quản lý bán vé tàu</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark navbar-ql">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="{% url 'tim_chuyen' %}">
+      <span class="brand-mark" aria-hidden="true">&#9654;</span>Bán vé tàu
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuChinh"
+            aria-controls="menuChinh" aria-expanded="false" aria-label="Mở menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="menuChinh">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if request.path|slice:':8' == '/dat-ve/' %}active{% endif %}" href="{% url 'tim_chuyen' %}">Đặt vé</a>
+        </li>
+        {% if user.is_authenticated and user.la_quan_ly %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.path|slice:':9' == '/quan-ly/' %}active{% endif %}" href="{% url 'quan_ly_gia_ve' %}">Quản lý giá vé</a>
+        </li>
+        {% endif %}
+        {% if user.is_authenticated and user.is_staff %}
+        <li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav align-items-lg-center">
+        {% if user.is_authenticated %}
+        <li class="nav-item"><span class="navbar-text me-lg-3">Xin chào, <strong class="text-white">{{ user.ho_ten|default:user.username }}</strong></span></li>
+        <li class="nav-item">
+          <form method="post" action="{% url 'logout' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-light btn-sm">Đăng xuất</button>
+          </form>
+        </li>
+        {% else %}
+        <li class="nav-item"><a class="btn btn-outline-light btn-sm" href="{% url 'login' %}?next={{ request.path|urlencode }}">Đăng nhập</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  {% if messages %}
+  <div class="mb-3" role="status">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer text-center">
+  <div class="container">Hệ thống thử nghiệm Quản lý bán vé tàu · UC14 Quản lý giá vé và khuyến mãi · UC02 Đặt vé (giữ chỗ) · dữ liệu giả lập</div>
+</footer>
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

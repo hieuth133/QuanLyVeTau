@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Tìm chuyến tàu{% endblock %}
+{% block content %}
+{% include "dat_ve/_tien_trinh.html" with buoc=1 %}
+<h1 class="h3 page-title mb-3">Tìm chuyến tàu</h1>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" action="{% url 'tim_chuyen' %}" novalidate>
+      {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="row g-3 align-items-start">
+        <div class="col-12 col-md-6 col-lg-3">{% include "_field.html" with field=form.ga_di %}</div>
+        <div class="col-12 col-md-6 col-lg-3">{% include "_field.html" with field=form.ga_den %}</div>
+        <div class="col-6 col-lg-2">{% include "_field.html" with field=form.ngay_di %}</div>
+        <div class="col-6 col-lg-2">{% include "_field.html" with field=form.so_hanh_khach %}</div>
+        <div class="col-12 col-lg-2 d-grid pt-lg-4"><button type="submit" class="btn btn-accent mt-lg-1">Tìm chuyến</button></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if da_tim %}
+  <h2 class="h5 mb-3">
+    {{ ga_di.ten_ga }} &rarr; {{ ga_den.ten_ga }}, ngày {{ ngay_di|date:"d/m/Y" }}
+    <span class="text-muted fw-normal">({{ so_hanh_khach }} hành khách)</span>
+  </h2>
+  {% if ds_chuyen %}
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr><th>Tàu</th><th>Giờ đi</th><th>Giờ đến</th><th class="text-end">Giá từ</th><th class="text-center">Chỗ trống</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for c in ds_chuyen %}
+          <tr>
+            <td><strong>{{ c.lich_trinh.tau.ma_tau }}</strong><div class="small text-muted">{{ c.lich_trinh.tuyen_duong.ten_tuyen }}</div></td>
+            <td>{{ c.thoi_diem_khoi_hanh|date:"H:i" }}<div class="small text-muted">{{ c.thoi_diem_khoi_hanh|date:"d/m" }}</div></td>
+            <td>{{ c.thoi_diem_den|date:"H:i" }}<div class="small text-muted">{{ c.thoi_diem_den|date:"d/m" }}</div></td>
+            <td class="text-end text-money">{% if c.gia_thap_nhat %}{{ c.gia_thap_nhat|vnd }}{% else %}<span class="text-muted">Chưa có giá</span>{% endif %}</td>
+            <td class="text-center">
+              {% if c.so_cho_trong == 0 %}<span class="badge text-bg-secondary">Hết chỗ</span>
+              {% elif not c.du_cho %}<span class="badge text-bg-warning">{{ c.so_cho_trong }} (không đủ {{ so_hanh_khach }})</span>
+              {% else %}<span class="badge text-bg-success">{{ c.so_cho_trong }}</span>{% endif %}
+            </td>
+            <td class="text-end">
+              {% if c.so_cho_trong == 0 %}
+              <button class="btn btn-sm btn-outline-secondary" disabled>Hết chỗ</button>
+              {% else %}
+              <a class="btn btn-sm btn-primary" href="{% url 'chon_cho' c.id %}?so_hanh_khach={{ so_hanh_khach }}">Chọn chuyến</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-warning">
+    <strong>Không có chuyến phù hợp</strong> vào ngày {{ ngay_di|date:"d/m/Y" }}.
+    {% if goi_y %}Bạn có thể thử các ngày lân cận có chuyến:{% else %}Vui lòng thử ngày khác hoặc tuyến khác.{% endif %}
+    {% if goi_y %}
+    <div class="mt-2 d-flex flex-wrap gap-2">
+      {% for g in goi_y %}
+      <a class="btn btn-sm btn-outline-primary" href="{{ g.url }}">{{ g.ngay|date:"D d/m/Y" }} · {{ g.so_chuyen }} chuyến</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

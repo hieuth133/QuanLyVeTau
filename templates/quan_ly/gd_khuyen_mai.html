@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{% if km %}Sửa khuyến mãi{% else %}Thêm khuyến mãi{% endif %}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="{{ url_huy }}">Quản lý giá vé và khuyến mãi</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{% if km %}Sửa khuyến mãi{% else %}Thêm khuyến mãi{% endif %}</li>
+  </ol>
+</nav>
+<h1 class="h3 page-title mb-3">{% if km %}Sửa khuyến mãi{% else %}Thêm khuyến mãi{% endif %}</h1>
+
+<div class="row">
+  <div class="col-lg-9">
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+    {% endif %}
+    <form method="post" action="" novalidate>
+      {% csrf_token %}
+      <div class="card mb-3">
+        <div class="card-header">Thông tin chương trình</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">{% include "_field.html" with field=form.ma_khuyen_mai %}</div>
+            <div class="col-md-8">{% include "_field.html" with field=form.ten %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=form.hinh_thuc_giam %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=form.gia_tri_giam %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=form.muc_giam_toi_da %}</div>
+            <div class="col-md-6">{% include "_field.html" with field=form.ngay_bat_dau %}</div>
+            <div class="col-md-6">{% include "_field.html" with field=form.ngay_ket_thuc %}</div>
+          </div>
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header">Phạm vi và điều kiện áp dụng</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">{% include "_field.html" with field=form.tuyen_duong %}</div>
+            <div class="col-md-6">{% include "_field.html" with field=form.loai_cho %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=form.doi_tuong_ap_dung %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=form.so_ngay_dat_truoc %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=form.so_luot_toi_da %}</div>
+            <div class="col-12">{% include "_field.html" with field=form.bat_buoc_nhap_ma %}</div>
+          </div>
+          {% if km %}<p class="small text-muted mb-0">Đã dùng: {{ km.so_luot_da_dung }} lượt.</p>{% endif %}
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Lưu</button>
+        <a class="btn btn-outline-secondary" href="{{ url_huy }}">Hủy</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

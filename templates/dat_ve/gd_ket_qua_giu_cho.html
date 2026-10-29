@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static ui %}
+{% block title %}Kết quả giữ chỗ {{ don.ma_dat_cho }}{% endblock %}
+{% block content %}
+{% include "dat_ve/_tien_trinh.html" with buoc=4 %}
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card mb-4">
+      <div class="card-body text-center py-4">
+        <div class="text-muted">Mã đặt chỗ</div>
+        <div class="ma-dat-cho">{{ don.ma_dat_cho }}</div>
+        <div class="mt-2">
+          {% if don.trang_thai == 'DANG_GIU' %}<span class="badge text-bg-warning fs-6">Đang giữ chỗ</span>
+          {% elif don.trang_thai == 'DA_THANH_TOAN' %}<span class="badge text-bg-success fs-6">Đã thanh toán</span>
+          {% elif don.trang_thai == 'HET_HAN' %}<span class="badge text-bg-secondary fs-6">Hết hạn</span>
+          {% else %}<span class="badge text-bg-danger fs-6">{{ don.get_trang_thai_display }}</span>{% endif %}
+        </div>
+        {% if don.trang_thai == 'HET_HAN' %}
+        <div class="alert alert-secondary mt-3 mb-0">
+          Đơn đã hết thời gian giữ chỗ nên các chỗ đã được giải phóng và vé chuyển sang <strong>Đã hủy</strong>.
+          Bạn có thể <a href="{% url 'tim_chuyen' %}">đặt vé lại</a>.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Chi tiết vé
+        {% if chuyen %}<span class="text-muted fw-normal">· Tàu {{ chuyen.lich_trinh.tau.ma_tau }}, {{ chuyen.lich_trinh.tuyen_duong.ga_di.ten_ga }} &rarr; {{ chuyen.lich_trinh.tuyen_duong.ga_den.ten_ga }}, {{ chuyen.thoi_diem_khoi_hanh|date:"H:i d/m/Y" }}</span>{% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr><th>Chỗ</th><th>Hành khách</th><th class="text-end">Giá cơ sở</th><th class="text-end">Giảm</th><th class="text-end">Giá vé</th><th>Trạng thái</th></tr>
+          </thead>
+          <tbody>
+          {% for v in ds_ve %}
+            <tr>
+              <td class="text-nowrap">Toa {{ v.ghe_ngoi.toa_xe.so_toa }}<div class="small text-muted">Ghế {{ v.ghe_ngoi.so_ghe }}</div></td>
+              <td>{{ v.ho_ten_hanh_khach }}<div class="small text-muted">{{ v.get_doi_tuong_display }} · {{ v.so_giay_to }}</div></td>
+              <td class="text-end text-money">{{ v.gia_co_so|vnd }}</td>
+              <td class="text-end text-money">{% if v.so_tien_giam %}-{{ v.so_tien_giam|vnd }}{% if v.khuyen_mai %}<div class="small text-muted">{{ v.khuyen_mai.ma_khuyen_mai }}</div>{% endif %}{% else %}—{% endif %}</td>
+              <td class="text-end text-money fw-bold">{{ v.gia_ve|vnd }}</td>
+              <td>
+                {% if v.trang_thai == 'DANG_GIU' %}<span class="badge text-bg-warning">Đang giữ</span>
+                {% elif v.trang_thai == 'DA_THANH_TOAN' %}<span class="badge text-bg-success">Đã thanh toán</span>
+                {% else %}<span class="badge text-bg-secondary">Đã hủy</span>{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr><td colspan="4" class="text-end">Tổng tiền</td><td class="text-end text-money fs-5 fw-bold">{{ don.tong_tien|vnd }}</td><td></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card summary-sticky">
+      <div class="card-header">Thanh toán</div>
+      <div class="card-body">
+        <dl class="kv mb-3">
+          <dt>Người đặt</dt><dd>{{ don.khach_hang.ho_ten }}<br><span class="small text-muted">{{ don.khach_hang.so_dien_thoai }}</span></dd>
+          <dt>Tổng tiền</dt><dd class="text-money fw-bold fs-5">{{ don.tong_tien|vnd }}</dd>
+          {% if tong_giam %}<dt>Đã giảm</dt><dd class="text-money text-success">-{{ tong_giam|vnd }}</dd>{% endif %}
+        </dl>
+        {% if don.trang_thai == 'DANG_GIU' %}
+        <div class="text-center border rounded-3 py-3 mb-3 bg-light">
+          <div class="small text-muted">Thời gian còn lại để thanh toán</div>
+          <div class="countdown" id="dem-nguoc" data-con-lai="{{ con_lai_giay }}">--:--</div>
+          <div class="small text-muted">Hết hạn lúc {{ don.thoi_diem_het_han|date:"H:i:s d/m/Y" }}</div>
+        </div>
+        <form method="post" action="{% url 'thanh_toan_gia_lap' don.ma_dat_cho %}" class="d-grid">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-accent">Thanh toán ngay (giả lập)</button>
+        </form>
+        <p class="form-text mt-2">Bản demo không kết nối cổng thanh toán thật; nút này chỉ đổi trạng thái đơn sang “Đã thanh toán”.</p>
+        {% elif don.trang_thai == 'DA_THANH_TOAN' %}
+        <div class="alert alert-success mb-0">Thanh toán thành công. Các chỗ đã chuyển sang trạng thái <strong>Đã bán</strong>.</div>
+        {% endif %}
+        <a class="btn btn-outline-secondary w-100 mt-3" href="{% url 'tim_chuyen' %}">Đặt vé khác</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% if don.trang_thai == 'DANG_GIU' %}<script src="{% static 'js/dem_nguoc.js' %}"></script>{% endif %}{% endblock %}

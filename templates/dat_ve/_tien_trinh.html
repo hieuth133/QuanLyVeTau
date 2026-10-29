@@ -1,0 +1,7 @@
+{# Thanh tiến trình đặt vé. Truyền `buoc` = 1..4. #}
+<ol class="steps" aria-label="Các bước đặt vé">
+  <li class="{% if buoc > 1 %}done{% elif buoc == 1 %}current{% endif %}"><span class="dot">1</span><br>Tìm chuyến</li>
+  <li class="{% if buoc > 2 %}done{% elif buoc == 2 %}current{% endif %}"><span class="dot">2</span><br>Chọn chỗ</li>
+  <li class="{% if buoc > 3 %}done{% elif buoc == 3 %}current{% endif %}"><span class="dot">3</span><br>Thông tin</li>
+  <li class="{% if buoc > 4 %}done{% elif buoc == 4 %}current{% endif %}"><span class="dot">4</span><br>Giữ chỗ</li>
+</ol>

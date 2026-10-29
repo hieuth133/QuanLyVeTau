@@ -1,0 +1,17 @@
+{% load ui %}{# Một trường form kiểu Bootstrap: nhãn, ô nhập, gợi ý, lỗi gắn đúng trường. #}
+{% if field.is_hidden %}{{ field }}{% else %}
+<div class="mb-3">
+  {% if field.field.widget.input_type == 'checkbox' %}
+  <div class="form-check">
+    {{ field|bs }}
+    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+  </div>
+  {% else %}
+  <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}</label>
+  {{ field|bs }}
+  {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+  {% endif %}
+  {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+</div>
+{% endif %}

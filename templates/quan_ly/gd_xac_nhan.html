@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}{{ tieu_de }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header text-danger">{{ tieu_de }}</div>
+      <div class="card-body">
+        <p>Bạn có chắc chắn muốn thực hiện thao tác này?</p>
+        <dl class="row kv">
+          {% for ten, gia_tri in dong %}
+          <dt class="col-sm-4">{{ ten }}</dt>
+          <dd class="col-sm-8">
+            {% if ten == 'Giá cơ sở' %}{{ gia_tri|vnd }}
+            {% elif gia_tri.year %}{{ gia_tri|date:"d/m/Y" }}
+            {% else %}{{ gia_tri }}{% endif %}
+          </dd>
+          {% endfor %}
+        </dl>
+        {% if la_gia and da_dung %}
+        <div class="alert alert-warning py-2 small">Quy tắc này đã được dùng để tính giá vé nên sẽ <strong>không bị xóa</strong>, chỉ chuyển sang “Ngừng áp dụng”.</div>
+        {% endif %}
+        <p class="text-muted small">{{ thong_diep }}</p>
+        <form method="post" class="d-flex gap-2">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">{{ nut }}</button>
+          <a class="btn btn-outline-secondary" href="{{ url_huy }}">Hủy</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

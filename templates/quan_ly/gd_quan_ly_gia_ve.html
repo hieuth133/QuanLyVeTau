@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Quản lý giá vé và khuyến mãi{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 page-title mb-0">Quản lý giá vé và khuyến mãi</h1>
+  {% if the == 'gia-ve' %}
+  <a class="btn btn-accent" href="{% url 'quy_tac_them' %}">+ Thêm quy tắc giá</a>
+  {% else %}
+  <a class="btn btn-accent" href="{% url 'khuyen_mai_them' %}">+ Thêm khuyến mãi</a>
+  {% endif %}
+</div>
+
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link {% if the == 'gia-ve' %}active{% endif %}" href="{% url 'quan_ly_gia_ve' %}?the=gia-ve">Giá vé</a></li>
+  <li class="nav-item"><a class="nav-link {% if the == 'khuyen-mai' %}active{% endif %}" href="{% url 'quan_ly_gia_ve' %}?the=khuyen-mai">Khuyến mãi</a></li>
+</ul>
+
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <input type="hidden" name="the" value="{{ the }}">
+      {% if the == 'gia-ve' %}
+      <div class="col-12 col-md-3">
+        <label class="form-label" for="f-tuyen">Tuyến đường</label>
+        <select class="form-select" id="f-tuyen" name="tuyen">
+          <option value="">Tất cả tuyến</option>
+          {% for t in ds_tuyen %}<option value="{{ t.id }}" {% if loc_tuyen == t.id %}selected{% endif %}>{{ t.ma_tuyen }} – {{ t.ten_tuyen }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label" for="f-loai">Loại chỗ</label>
+        <select class="form-select" id="f-loai" name="loai_cho">
+          <option value="">Tất cả loại chỗ</option>
+          {% for l in ds_loai_cho %}<option value="{{ l.id }}" {% if loc_loai_cho == l.id %}selected{% endif %}>{{ l.ten_loai }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="col-12 col-md-3">
+        <label class="form-label" for="f-tt">Trạng thái</label>
+        <select class="form-select" id="f-tt" name="trang_thai">
+          <option value="">Tất cả trạng thái</option>
+          {% for ma, ten in ds_trang_thai %}<option value="{{ ma }}" {% if loc_trang_thai == ma %}selected{% endif %}>{{ ten }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-auto d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Lọc</button>
+        <a class="btn btn-outline-secondary" href="{% url 'quan_ly_gia_ve' %}?the={{ the }}">Bỏ lọc</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if the == 'gia-ve' %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>#</th><th>Tuyến</th><th>Loại chỗ</th><th>Thời điểm</th><th class="text-end">Giá cơ sở</th><th>Hiệu lực</th><th>Trạng thái</th><th class="d-none d-xl-table-cell">Ghi chú</th><th class="text-end">Thao tác</th></tr>
+      </thead>
+      <tbody>
+      {% for q in ds_quy_tac %}
+        <tr class="{% if q.trang_thai == 'NGUNG_AP_DUNG' %}text-muted{% endif %}">
+          <td>{{ q.id }}</td>
+          <td class="text-nowrap">{{ q.tuyen_duong.ma_tuyen }}</td>
+          <td class="text-nowrap" title="{{ q.loai_cho.ten_loai }}">{{ q.loai_cho.ma_loai }}<div class="small text-muted d-none d-xl-block">{{ q.loai_cho.ten_loai }}</div></td>
+          <td>
+            {% if q.loai_thoi_diem == 'LE_TET' %}<span class="badge text-bg-danger">{{ q.get_loai_thoi_diem_display }}</span>
+            {% elif q.loai_thoi_diem == 'CUOI_TUAN' %}<span class="badge text-bg-info">{{ q.get_loai_thoi_diem_display }}</span>
+            {% else %}<span class="badge text-bg-light border">{{ q.get_loai_thoi_diem_display }}</span>{% endif %}
+          </td>
+          <td class="text-end text-money fw-bold">{{ q.gia_co_so|vnd }}</td>
+          <td class="text-nowrap">{{ q.ngay_bat_dau|date:"d/m/Y" }} &rarr; {% if q.ngay_ket_thuc %}{{ q.ngay_ket_thuc|date:"d/m/Y" }}{% else %}<span class="text-muted">không giới hạn</span>{% endif %}</td>
+          <td>
+            {% if q.trang_thai == 'DANG_AP_DUNG' %}<span class="badge text-bg-success">Đang áp dụng</span>{% else %}<span class="badge text-bg-secondary">Ngừng áp dụng</span>{% endif %}
+            {% if q.da_dung %}<span class="badge text-bg-warning" title="Đã được dùng để tính giá vé: sửa sẽ tạo phiên bản mới">Đã dùng</span>{% endif %}
+          </td>
+          <td class="small d-none d-xl-table-cell">{{ q.ghi_chu|default:"—" }}</td>
+          <td class="text-end text-nowrap">
+            {% if q.trang_thai == 'DANG_AP_DUNG' %}
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'quy_tac_sua' q.id %}">Sửa</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'quy_tac_ngung' q.id %}">Ngừng</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9" class="text-center text-muted py-4">Không có quy tắc giá nào phù hợp bộ lọc.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Mã</th><th>Chương trình</th><th>Mức giảm</th><th>Phạm vi</th><th>Điều kiện</th><th>Hiệu lực</th><th class="text-center">Lượt dùng</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr>
+      </thead>
+      <tbody>
+      {% for km in ds_khuyen_mai %}
+        {% with tt=km.trang_thai_hien_thi %}
+        <tr class="{% if tt == 'DA_KET_THUC' %}text-muted{% endif %}">
+          <td><code class="fs-6">{{ km.ma_khuyen_mai }}</code>{% if km.bat_buoc_nhap_ma %}<div><span class="badge text-bg-dark">Nhập mã</span></div>{% else %}<div><span class="badge text-bg-light border">Tự động</span></div>{% endif %}</td>
+          <td>{{ km.ten }}</td>
+          <td class="text-money">
+            {% if km.hinh_thuc_giam == 'PHAN_TRAM' %}{{ km.gia_tri_giam|phan_tram }}%{% else %}{{ km.gia_tri_giam|vnd }}{% endif %}
+            {% if km.muc_giam_toi_da %}<div class="small text-muted">tối đa {{ km.muc_giam_toi_da|vnd }}</div>{% endif %}
+          </td>
+          <td class="small">{% if km.tuyen_duong %}{{ km.tuyen_duong.ma_tuyen }}{% else %}Mọi tuyến{% endif %} · {% if km.loai_cho %}{{ km.loai_cho.ma_loai }}{% else %}mọi loại chỗ{% endif %}</td>
+          <td class="small">{{ km.ten_doi_tuong }}{% if km.so_ngay_dat_truoc %}<div>đặt trước ≥ {{ km.so_ngay_dat_truoc }} ngày</div>{% endif %}</td>
+          <td class="text-nowrap small">{{ km.ngay_bat_dau|date:"d/m/Y" }} &rarr; {{ km.ngay_ket_thuc|date:"d/m/Y" }}</td>
+          <td class="text-center">{{ km.so_luot_da_dung }}{% if km.so_luot_toi_da %} / {{ km.so_luot_toi_da }}{% else %} / ∞{% endif %}</td>
+          <td>
+            {% if tt == 'DANG_AP_DUNG' %}<span class="badge text-bg-success">Đang áp dụng</span>
+            {% elif tt == 'SAP_AP_DUNG' %}<span class="badge text-bg-info">Sắp áp dụng</span>
+            {% else %}<span class="badge text-bg-secondary">Đã kết thúc</span>{% endif %}
+          </td>
+          <td class="text-end text-nowrap">
+            {% if tt != 'DA_KET_THUC' %}
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'khuyen_mai_sua' km.id %}">Sửa</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'khuyen_mai_ket_thuc' km.id %}">Kết thúc</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endwith %}
+      {% empty %}
+        <tr><td colspan="9" class="text-center text-muted py-4">Không có chương trình khuyến mãi nào phù hợp bộ lọc.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

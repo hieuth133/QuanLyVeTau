@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static ui l10n %}
+{% block title %}Chọn chỗ{% endblock %}
+{% block content %}
+{% include "dat_ve/_tien_trinh.html" with buoc=2 %}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="h3 page-title mb-1">Chọn chỗ</h1>
+    <div class="text-muted">
+      Tàu <strong>{{ chuyen.lich_trinh.tau.ma_tau }}</strong> ·
+      {{ chuyen.lich_trinh.tuyen_duong.ga_di.ten_ga }} &rarr; {{ chuyen.lich_trinh.tuyen_duong.ga_den.ten_ga }} ·
+      khởi hành {{ chuyen.thoi_diem_khoi_hanh|date:"H:i d/m/Y" }} ·
+      <span class="text-success">{{ tong_trong }} chỗ trống</span>
+    </div>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_tim }}">&larr; Đổi chuyến</a>
+</div>
+
+<form id="form-chon-cho" method="get" action="{% url 'thong_tin' chuyen.id %}" data-max="{{ max_cho }}">
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs border-0" role="tablist">
+            {% for toa in ds_toa %}
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {% if toa.id == toa_chon %}active{% endif %}" id="tab-{{ toa.id }}" type="button"
+                      data-bs-toggle="tab" data-bs-target="#toa-{{ toa.id }}" role="tab"
+                      aria-controls="toa-{{ toa.id }}" aria-selected="{% if toa.id == toa_chon %}true{% else %}false{% endif %}">
+                Toa {{ toa.so_toa }}
+                <span class="badge {% if toa.so_cho_trong %}text-bg-success{% else %}text-bg-secondary{% endif %} ms-1">{{ toa.so_cho_trong }}</span>
+              </button>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="card-body">
+          <div class="seat-legend small mb-3 d-flex flex-wrap gap-3">
+            <span><i class="sw free"></i>Trống</span>
+            <span><i class="sw hold"></i>Đang giữ</span>
+            <span><i class="sw sold"></i>Đã bán</span>
+            <span><i class="sw pick"></i>Bạn chọn</span>
+          </div>
+          <div class="tab-content">
+            {% for toa in ds_toa %}
+            <div class="tab-pane fade {% if toa.id == toa_chon %}show active{% endif %}" id="toa-{{ toa.id }}" role="tabpanel" aria-labelledby="tab-{{ toa.id }}" tabindex="0">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div><strong>Toa {{ toa.so_toa }}</strong> · {{ toa.loai_cho.ten_loai }}</div>
+                <div>
+                  {% if toa.gia_co_so is not None %}Giá cơ sở: <strong class="text-money">{{ toa.gia_co_so|vnd }}</strong>
+                  {% else %}<span class="badge text-bg-warning">Chuyến chưa có giá cho loại chỗ này</span>{% endif %}
+                </div>
+              </div>
+              <div class="seat-map">
+                <div class="seat-grid cols-{{ toa.cot }}">
+                  {% for g in toa.so_do %}
+                  <label class="seat {% if g.trang_thai == 'TRONG' and g.gia is None %}seat-khoa{% else %}seat-{{ g.trang_thai|lower }}{% endif %}"
+                         title="{% if g.trang_thai == 'DANG_GIU' %}Đang được giữ{% elif g.trang_thai == 'DA_BAN' %}Đã bán{% elif g.gia is None %}Chưa có giá{% else %}{% if toa.cot == 2 %}Giường{% else %}Ghế{% endif %} {{ g.so_ghe }} · {{ g.gia|vnd }}{% endif %}">
+                    <input type="checkbox" name="ghe" value="{{ g.ghe_id }}"
+                           data-gia="{{ g.gia|default_if_none:0|unlocalize }}"
+                           data-ten="Toa {{ toa.so_toa }} – {% if toa.cot == 2 %}giường{% else %}ghế{% endif %} {{ g.so_ghe }}"
+                           {% if g.trang_thai != 'TRONG' or g.gia is None %}disabled{% endif %}>
+                    <span>{{ g.so_ghe }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card summary-sticky">
+        <div class="card-header d-flex justify-content-between">
+          <span>Chỗ đã chọn</span><span class="badge text-bg-primary" id="so-da-chon">0/{{ max_cho }}</span>
+        </div>
+        <div class="card-body">
+          <p class="text-muted small mb-2" id="chua-chon">Chọn một hoặc nhiều chỗ trống trên sơ đồ (tối đa {{ max_cho }} chỗ mỗi đơn){% if so_hanh_khach %}. Dự kiến: {{ so_hanh_khach }} hành khách{% endif %}.</p>
+          <ul class="list-unstyled mb-3" id="ds-da-chon"></ul>
+          <div class="alert alert-warning py-2 small d-none" id="canh-bao-toi-da" role="alert">
+            Mỗi đơn chỉ được đặt tối đa {{ max_cho }} chỗ.
+          </div>
+          <div class="d-flex justify-content-between border-top pt-3">
+            <span>Tạm tính (giá cơ sở)</span><strong class="text-money" id="tam-tinh">0 đ</strong>
+          </div>
+          <div class="form-text mb-3">Khuyến mãi sẽ được tính khi giữ chỗ, tùy đối tượng hành khách.</div>
+          <button type="submit" class="btn btn-accent w-100" id="nut-tiep-tuc" disabled>Tiếp tục &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/chon_cho.js' %}"></script>{% endblock %}

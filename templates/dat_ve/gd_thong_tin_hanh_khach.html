@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Thông tin hành khách{% endblock %}
+{% block content %}
+{% include "dat_ve/_tien_trinh.html" with buoc=3 %}
+
+<h1 class="h3 page-title mb-1">Thông tin hành khách</h1>
+<div class="text-muted mb-3">
+  Tàu <strong>{{ chuyen.lich_trinh.tau.ma_tau }}</strong> ·
+  {{ chuyen.lich_trinh.tuyen_duong.ga_di.ten_ga }} &rarr; {{ chuyen.lich_trinh.tuyen_duong.ga_den.ten_ga }} ·
+  khởi hành {{ chuyen.thoi_diem_khoi_hanh|date:"H:i d/m/Y" }}
+</div>
+
+<form method="post" action="{% url 'giu_cho' chuyen.id %}" novalidate>
+  {% csrf_token %}
+  {{ formset.management_form }}
+  {# Nút mặc định khi nhấn Enter (tránh nút "Tiếp tục không dùng mã" trở thành nút mặc định) #}
+  <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Xác nhận giữ chỗ</button>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      {% if form.non_field_errors or formset.non_form_errors %}
+      <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+        {% for e in formset.non_form_errors %}<div>{{ e }}</div>{% endfor %}
+      </div>
+      {% endif %}
+
+      {% if loi_ma_km %}
+      <div class="alert alert-warning">
+        <strong>Mã khuyến mãi không áp dụng được.</strong> {{ form.ma_khuyen_mai.errors.0|default:"" }}
+        {% if bang_gia_khong_ma %}
+        <div class="mt-2">Giá khi <strong>không dùng mã</strong> (đã gồm khuyến mãi tự động nếu có):</div>
+        <ul class="mb-2 mt-1">
+          {% for r in bang_gia_khong_ma %}
+          <li>{{ r.ho_ten }} – toa {{ r.ghe.toa_xe.so_toa }} ghế {{ r.ghe.so_ghe }}: <strong class="text-money">{{ r.ve.gia_ve|vnd }}</strong>
+            {% if r.ve.so_tien_giam %}<span class="text-muted">(giảm {{ r.ve.so_tien_giam|vnd }})</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+        <div>Tổng cộng: <strong class="text-money">{{ tong_khong_ma|vnd }}</strong></div>
+        {% endif %}
+        <div class="mt-2 d-flex flex-wrap gap-2">
+          <button type="submit" name="bo_ma" value="1" class="btn btn-sm btn-primary">Tiếp tục không dùng mã</button>
+          <span class="small text-muted align-self-center">hoặc sửa mã ở ô bên dưới rồi xác nhận lại.</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card mb-4">
+        <div class="card-header">Thông tin người đặt</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">{% include "_field.html" with field=form.ho_ten %}</div>
+            <div class="col-md-6">{% include "_field.html" with field=form.so_dien_thoai %}</div>
+            <div class="col-md-6">{% include "_field.html" with field=form.email %}</div>
+            <div class="col-md-6">{% include "_field.html" with field=form.ma_khuyen_mai %}</div>
+          </div>
+        </div>
+      </div>
+
+      {% for f in formset %}
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>
+            Hành khách {{ forloop.counter }}
+            {% if f.ghe_info %}· Toa {{ f.ghe_info.so_toa }}, ghế {{ f.ghe_info.so_ghe }}
+            <span class="text-muted fw-normal">({{ f.ghe_info.loai_cho }})</span>{% endif %}
+          </span>
+          {% if f.ghe_info and f.ghe_info.gia_co_so %}<span class="badge text-bg-light text-money">{{ f.ghe_info.gia_co_so|vnd }}</span>{% endif %}
+        </div>
+        <div class="card-body">
+          {{ f.ghe_id }}
+          {% for e in f.ghe_id.errors %}<div class="alert alert-danger py-1">{{ e }}</div>{% endfor %}
+          <div class="row">
+            <div class="col-md-5">{% include "_field.html" with field=f.ho_ten %}</div>
+            <div class="col-md-3">{% include "_field.html" with field=f.doi_tuong %}</div>
+            <div class="col-md-4">{% include "_field.html" with field=f.so_giay_to %}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card summary-sticky">
+        <div class="card-header">Tóm tắt</div>
+        <div class="card-body">
+          <dl class="kv mb-2">
+            <dt>Số chỗ</dt><dd>{{ formset.forms|length }}</dd>
+            <dt>Tạm tính (giá cơ sở)</dt><dd class="text-money fw-bold">{{ tam_tinh|vnd }}</dd>
+          </dl>
+          <p class="form-text">Giá cuối cùng gồm khuyến mãi tốt nhất cho từng hành khách, được chốt khi giữ chỗ. Chỗ được giữ trong thời gian giới hạn để bạn thanh toán.</p>
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-accent">Xác nhận giữ chỗ</button>
+            <a class="btn btn-outline-secondary" href="{% url 'chon_cho' chuyen.id %}">&larr; Quay lại chọn chỗ</a>
+            <a class="btn btn-link text-danger" href="{% url 'tim_chuyen' %}">Hủy đặt vé</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
